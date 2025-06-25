@@ -40,7 +40,6 @@ contract RathFiTachyonSecuredForwarder is Ownable {
         signerAddress = _signerAddress;
     }
 
-
     /**
      * @notice Sets the signer address.
      * @param _signerAddress The new signer address.
@@ -48,7 +47,6 @@ contract RathFiTachyonSecuredForwarder is Ownable {
     function setSignerAddress(address _signerAddress) external onlyOwner {
         signerAddress = _signerAddress;
     }
-
 
     /**
      * @notice Forwards a call to a target address with the specified data and value.
@@ -63,16 +61,23 @@ contract RathFiTachyonSecuredForwarder is Ownable {
         payable
     {
         // Verify the signature
-        bytes32 messageHash = keccak256(abi.encodePacked(block.chainid, nonce, target, data, value));
+        bytes32 messageHash =
+            keccak256(abi.encode("RATH_FI_CALL", block.chainid, address(this), nonce, target, data, value));
 
         _verifySignature(messageHash, signature, signerAddress);
         _useUnorderedNonce(nonce);
 
         // Forward the call
-        (bool success,) = target.call{value: value}(data);
+        (bool success, bytes memory returnData) = target.call{value: value}(data);
 
         if (!success) {
-            revert TachyonForwarderFailed();
+            if (returnData.length > 0) {
+                assembly {
+                    revert(add(32, returnData), mload(returnData))
+                }
+            } else {
+                revert TachyonForwarderFailed();
+            }
         }
     }
 
@@ -84,21 +89,42 @@ contract RathFiTachyonSecuredForwarder is Ownable {
      * @param nonce The nonce for the transaction.
      * @param signature The signature authorizing the transaction.
      */
-    function multiCall(address[] calldata target, bytes[] calldata data, uint256[] calldata value, uint256 nonce, bytes calldata signature)
-        external
-        payable
-    {
+    function multiCall(
+        address[] calldata target,
+        bytes[] calldata data,
+        uint256[] calldata value,
+        uint256 nonce,
+        bytes calldata signature
+    ) external payable {
         // Verify the signature
-        bytes32 messageHash = keccak256(abi.encodePacked(block.chainid, nonce, abi.encode(target), abi.encode(data), abi.encode(value)));
+        bytes32 messageHash = keccak256(
+            abi.encode(
+                "RATH_FI_MULTI_CALL",
+                block.chainid,
+                address(this),
+                nonce,
+                abi.encode(target),
+                abi.encode(data),
+                abi.encode(value)
+            )
+        );
 
         _verifySignature(messageHash, signature, signerAddress);
         _useUnorderedNonce(nonce);
 
         // Forward the calls
         for (uint256 i = 0; i < data.length; i++) {
-            (bool success,) = target[i].call{value: value[i]}(data[i]);
+            (bool success, bytes memory returnData) = target[i].call{value: value[i]}(data[i]);
+            
+            // If the call fails, revert with the return data if available
             if (!success) {
-                revert TachyonForwarderFailed();
+                if (returnData.length > 0) {
+                    assembly {
+                        revert(add(32, returnData), mload(returnData))
+                    }
+                } else {
+                    revert TachyonForwarderFailed();
+                }
             }
         }
     }
@@ -153,7 +179,6 @@ contract RathFiTachyonSecuredForwarder is Ownable {
             revert TachyonInvalidSignature();
         }
     }
-
 
     /**
      * @notice Allows the contract to receive ETH.

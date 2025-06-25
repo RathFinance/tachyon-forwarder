@@ -6,10 +6,8 @@ import {Script} from "forge-std/Script.sol";
 import {RathFiTachyonSecuredForwarder} from "../src/RathFiTachyonSecuredForwarder.sol";
 import {ICREATE3Factory} from "../src/interface/ICreate3Factory.sol";
 
-
-
 contract DeployRathFiSecuredForwarder is Script {
-    address constant signerAddress = 0x888300882D855e7f490ec69A1845c5F2e6c35381;
+    address constant signerAddress = 0x42F5d19865CD35feb1c610f94b5DBB5c05cdF6A0;
     address constant Owner = signerAddress;
     
     ICREATE3Factory public ICREATE;
@@ -18,14 +16,9 @@ contract DeployRathFiSecuredForwarder is Script {
         
         uint256 deployerPrivateKey = vm.envUint("KEY");
         vm.startBroadcast(deployerPrivateKey);
-        
-        // RathFiTachyonSecuredForwarder forwarder = new RathFiTachyonSecuredForwarder(
-        //     signerAddress,
-        //     Owner
-        // );
 
          address deployed = ICREATE.deploy(
-            keccak256("RathFiTachyonSecuredForwarder"),
+            keccak256("RathFiTachyonSecuredForwarder-AcrossBot"),
             abi.encodePacked(
                 type(RathFiTachyonSecuredForwarder).creationCode,
                 abi.encode(signerAddress, Owner)
