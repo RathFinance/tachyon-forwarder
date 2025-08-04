@@ -7,8 +7,8 @@ import {RathFiTachyonSecuredForwarder} from "../src/RathFiTachyonSecuredForwarde
 import {ICREATE3Factory} from "../src/interface/ICreate3Factory.sol";
 
 contract DeployRathFiSecuredForwarder is Script {
-    address constant signerAddress = 0x42F5d19865CD35feb1c610f94b5DBB5c05cdF6A0;
-    address constant Owner = signerAddress;
+    address constant signerAddress = 0x9ADA24F01D4a35E1f7ca8704082a4bC676845155;
+    address constant Owner = 0xd86eDedF1b757879C3b00929cD14AcA58262eEe8;
     
     ICREATE3Factory public ICREATE;
     function run() external {
@@ -18,7 +18,7 @@ contract DeployRathFiSecuredForwarder is Script {
         vm.startBroadcast(deployerPrivateKey);
 
          address deployed = ICREATE.deploy(
-            keccak256("RathFiTachyonSecuredForwarder-AcrossBot"),
+            keccak256("RathFiTachyonSecuredForwarder-AcrossSolver"),
             abi.encodePacked(
                 type(RathFiTachyonSecuredForwarder).creationCode,
                 abi.encode(signerAddress, Owner)
